@@ -1,0 +1,423 @@
+#!/usr/bin/env python3
+#
+# ut-cache-mgr-2
+# By Rodney Fisk <xizdaqrian@gmail.com>
+# Adapted from ut-cache-manager
+# by:
+# ------------------------------------------------------------------------
+# Martin Tournoij <martin@arp242.net>
+# http://carpetsmoker.net/weblog/Manage_Unreal_Tournament_cache_files.php
+# Free to use for whatever purpose. There are no restrictions.
+# Version 20100624
+#
+# This is a very simple script to manage unreal tournament cache files.
+# Works on Windows, FreeBSD, Linux.
+# ------------------------------------------------------------------------
+# Thank you Martin
+
+# Imports
+import getopt
+import os
+import re           # REGEX
+import shutil
+import sys
+import time
+
+# http://stackoverflow.com/questions/287871/print-in-terminal-with-colors-using-python
+# http://stackoverflow.com/questions/4842424/list-of-ansi-color-escape-sequences
+class bcolors:
+    # Foreground Standard
+    WHITE    =  '\033[37m'
+    CYAN     =  '\033[36m'
+    MAGENTA  =  '\033[35m'
+    BLUE     =  '\033[34m'
+    YELLOW   =  '\033[33m'
+    GREEN    =  '\033[32m'
+    RED      =  '\033[31m'
+    BLACK    =  '\033[30m'
+    ENDC     =  '\033[0m'
+
+    # Foreground Bold
+    bWHITE    =  '\033[37;1m'
+    bCYAN     =  '\033[36;1m'
+    bMAGENTA  =  '\033[35;1m'
+    bBLUE     =  '\033[34;1m'
+    bYELLOW   =  '\033[33;1m'
+    bGREEN    =  '\033[32;1m'
+    bRED      =  '\033[31;1m'
+    bBLACK    =  '\033[30;1m'
+
+    # Background Standard
+    WHITE_BACK    =  '\033[47m'
+    CYAN_BACK     =  '\033[46m'
+    MAGENTA_BACK  =  '\033[45m'
+    BLUE_BACK     =  '\033[44m'
+    YELLOW_BACK   =  '\033[43m'
+    GREEN_BACK    =  '\033[42m'
+    RED_BACK      =  '\033[41m'
+    BLACK_BACK    =  '\033[40m'
+
+
+# readConfig() reads dotfile named after the invocation name of the script
+def readConfig():
+    "reads dotfile named after the invocation name of the script"
+
+    rcFile = '%s/.%src' % (userHome, thisName)
+    configPairs = {}
+
+    if not os.path.exists(rcFile):
+      return 1
+
+    print( 'Using settings found in %s' % rcFile )
+
+    with open( rcFile, 'r') as f:
+        for line in f:
+            if not line.startswith(('[', '#', '\0', '\n')) and not line == '':
+                line = line.strip()
+                (key, val) = line.split('=')
+                key = key.strip()
+                val = val.strip()
+                configPairs [key] = val
+
+    for k, v in configPairs.items():
+        # Can't be [0-9]. It must be a "tuple of string"
+        if not v.startswith(tuple(str(range(10)))):
+            #globals()[k] = v[1:-1]
+            globals()[k] = v
+        else:
+            globals()[k] = int(v)
+
+    return 0
+
+
+def writeConfig( argv ):
+    #config = configparser.ConfigParser()
+    rcName = '%s/.%src' % (userHome, thisName)
+
+    Paths   = {'gameFolder' : 'Games/Epic/UT2004/', \
+                'cacheFolder': 'Games/Epic/UT2004/Cache/'}
+    Files   = {'iniFile': 'cache.ini', \
+                'cacheExtension': 'uxx'}
+    Options = {'colorOutput': '0', \
+                'pauseOutput': '0', \
+                'showMissing': '0' }
+    try:
+        # By accessing locals(), we get the complete
+        #   list of local variables. This way we don't
+        #   have to change anything below, after editing the
+        #   dictionaries above.
+        # We have to make a copy, which is static
+        # locals() changes when we iterate over it
+        ll = locals().copy()
+        with open(rcName, 'w') as configFile:
+            for i in ll.keys():
+                # Is the word "dict" in the type output?
+                if str(type( locals()[i] )).find('dict') != -1:
+                    sectionLine = '[' + i + ']\n'
+                    configFile.write( sectionLine )
+                    for k, v in eval(i).items():
+                        kvPairLine = k + '=' + v + '\n'
+                        configFile.write(kvPairLine)
+                    configFile.write('\n')
+        configFile.close()
+
+        print('Config file written to %s' % rcName)
+        exit(0)
+    except IOError as err:
+        print(err)
+        exit(1)
+
+
+def backupINI():
+    try:
+        destFolder
+        #shutil.copy(cachefile,cachefile + '.bak')
+    except NameError:
+        print( '==>ERROR: Please specify a destination folder' )
+        exit(1)
+
+    os.path.copy(os.path.join(cacheFolder, iniFile))
+
+#http://stackoverflow.com/questions/566746/how-to-get-console-window-width-in-python
+def getTerminalSize():
+    env = os.environ
+    def ioctl_GWINSZ(fd):
+        try:
+            import fcntl, termios, struct
+            cr = struct.unpack('hh', fcntl.ioctl(fd, termios.TIOCGWINSZ,
+        '1234'))
+        except:
+            return
+        return cr
+    cr = ioctl_GWINSZ(0) or ioctl_GWINSZ(1) or ioctl_GWINSZ(2)
+    if not cr:
+        try:
+            fd = os.open(os.ctermid(), os.O_RDONLY)
+            cr = ioctl_GWINSZ(fd)
+            os.close(fd)
+        except:
+            pass
+    if not cr:
+        cr = (env.get('LINES', 25), env.get('COLUMNS', 80))
+
+        ### Use get(key[, default]) instead of a try/catch
+        #try:
+        #    cr = (env['LINES'], env['COLUMNS'])
+        #except:
+        #    cr = (25, 80)
+    return int(cr[1]), int(cr[0])
+
+
+def printVer():
+    print ("UT-Cache-Manager - Python Version 0.46")
+    sys.exit(0)
+
+
+def printHelp():
+    print ("%s " % str( sys.argv[0] ) + "[-v] [-h] [-l] [-p] [-c] path/to/cache [-x] REGEX" )
+    sys.exit(0)
+
+
+def existsIniFile():
+    try:
+        cacheFolder
+    except NameError:
+        print ( '==>ERROR: The Cache Folder has not been specified' )
+        printHelp()
+        sys.exit(1)
+
+    try:
+        iniFile
+    except NameError:
+        print ( '==>ERROR: The INI Filename has not been specified' )
+        printHelp()
+        sys.exit(1)
+
+
+    ini = os.path.join(str(cacheFolder), iniFile)
+    if not os.path.exists(ini):
+        print ( 'Error: file "%s" does not exist.' % iniFile )
+        print ( 'Example: %s -c C:\\games\\UnrealTournament\\Cache\\ -f cache.ini' % sys.argv[0] )
+        sys.exit(1)
+
+
+def ReadFile(file, regex):
+        move = [ ]
+        with open(file, 'r') as f:
+            for line in f:
+                if line[0] == ';' or line[0] == '[':
+                    continue
+
+                line = line.strip()
+                if line == '':
+                    continue
+
+                l = line.split('=')
+                    #http://www.tutorialspoint.com/python/python_reg_expressions.htm
+                    # Make regex case insensitive and make ^|$ match beg. & end of line
+                uxx = str(l[0]) + '.uxx'
+                l.insert(1, uxx)
+                del l[0]
+                if os.path.exists('%s/%s' % (cacheFolder, l[0])):
+                    uxx_ctime = time.strftime("%m-%d-%Y", time.gmtime(os.stat('%s/%s' % (cacheFolder, l[0])).st_ctime))
+                else:
+                    uxx_ctime = 'Not Found'
+
+                l.insert(0, uxx_ctime)
+
+                searchOBJ_date = re.search( regex, l[0], re.M|re.I)
+                searchOBJ_name = re.search( regex, l[2], re.M|re.I)
+                if searchOBJ_date or searchOBJ_name:
+                    move.append(l)
+
+        f.close()
+        return move
+
+
+def Search(regex):
+    missing = [ ]
+    counter = 1
+    (width, height) = getTerminalSize()
+
+    existsIniFile()
+    move = ReadFile(os.path.join(cacheFolder, iniFile), regex)
+
+    for file in move:
+        uxx_ctime   =  file[0]
+        uxx_file    =  file[1]
+        true_file   =  file[2]
+        if file[0] != 'Not Found':
+            #http://www.seanelavelle.com/2012/05/04/make-os-stat-times-readable-in-python/
+            if colorOutput == 1:
+                print ( bcolors.GREEN + "%s\t" % uxx_ctime + bcolors.bBLACK + "%s\t" % uxx_file + bcolors.ENDC +  "%s" % true_file )
+            else:
+                print ( "%s\t%s\t%s" % (uxx_ctime, uxx_file, true_file ))
+        else:
+            if colorOutput == 1 and showMissing == 1:
+                print ( bcolors.bRED + "%s\t" % uxx_ctime + bcolors.bBLACK + "%s\t" % uxx_file + bcolors.ENDC + "%s" % true_file )
+            elif colorOutput != 1 and showMissing == 1:
+                print ( "%s\t%s\t%s" % (uxx_ctime, uxx_file, true_file))
+            missing.append( file )
+
+        counter += 1
+        if counter == (height - 3) and pauseOutput == 1:
+            # pause at each screenful
+            os.system( "read -n 1 -p \"Press any key to continue\n\"")
+            counter = 0
+
+    print ( "Entries decoded:\t" + bcolors.CYAN + "%4i" % len(move) + bcolors.ENDC )
+    print ( "Missing files\t\t" + bcolors.bRED + "%4i" % len( missing ) + bcolors.ENDC )
+    print ( "Extractable Files:\t" + bcolors.GREEN + "%4i" % ( len(move) - len(missing) ) + bcolors.ENDC )
+    if showMissing != 1:
+        print ("Show missing results with the \'-m\' option")
+    exit(0)
+
+
+def extract(regex):
+    missing = [ ]
+    existsIniFile()
+    move = ReadFile( os.path.join( cacheFolder, iniFile ), regex )
+
+    if not destFolder:
+        print( '==>ERROR:  Please specify a destination folder' )
+        printHelp()
+
+    if not os.path.exists( destFolder ):
+        print( "Folder %s not found. Creating %s now..." % (destFolder, destFolder ))
+        try:
+            os.makedirs( destFolder )
+        except os.OSError as err:
+            print( err )
+            exit( 1 )
+
+    for file in move:
+        if file[0] == 'Not Found':
+            missing.append( file )
+            continue
+
+        src = '%s/%s' % ( cacheFolder, file[1] )
+        dst = '%s/%s' % ( destFolder, file[2] )
+
+        try:
+            shutil.copy2( src, dst )
+            print( 'extracting ' + bcolors.bBLACK + '%s' % file[1] + bcolors.ENDC + ' ==> ' + bcolors.GREEN + '%s' % dst + bcolors.ENDC )
+        except shutil.Error as err:
+            print( err )
+            exit( 1 )
+
+    print ( "Entries decoded:\t" + bcolors.CYAN + "%4i" % len(move) + bcolors.ENDC )
+    print ( "Missing files\t\t" + bcolors.bRED + "%4i" % len( missing ) + bcolors.ENDC )
+    print ( "Extracted Files:\t" + bcolors.GREEN + "%4i" % ( len(move) - len(missing) ) + bcolors.ENDC )
+    exit(0)
+
+
+def main( argv ):
+
+    # Globals
+    global cacheExtension
+    global cacheFolder
+    global colorOutput
+    global destFolder
+    global gameFolder
+    global iniFile
+    global osPlatform
+    global pauseOutput
+    global showMissing
+    global thisName
+    global userHome
+
+    userHome    =  os.path.expanduser('~')
+    thisName    =  os.path.basename(sys.argv[0])
+    OSPlatform  =  sys.platform
+
+    if readConfig() != 0:
+        print('No config file found... using defaults and options')
+        cacheExtension  =  'uxx'
+        colorOutput     =  0
+        iniFile         =  'cache.ini'
+        pauseOutput     =  0
+        showMissing     =  0
+        #listofArgs = str( sys.argv )
+        #if sys.platform[:3] == 'win':
+            #cacheFolder = '%s\\UnrealTournament\\Cache\\' % os.getenv('SYSTEMDRIVE')
+        #else:
+            #cacheFolder = os.path.expanduser('~/.loki/ut/Cache/')
+
+    # Command line arguments with getopt
+    try:
+        # Short option syntax: "hv:"
+        # Long option syntax: "help" or "verbose="
+        opts, args = getopt.getopt(sys.argv[1:], "hvpmlrb:d:f:c:d:x:", \
+                                   ['help', 'version', 'pause', 'show-missing', \
+                                    'colorize', 'make-rc', 'cache-file', 'cache-folder', \
+                                    'dest-folder', 'extract'])
+
+    except getopt.GetoptError as err:
+        # Print debug info
+        print (err)
+
+    for option, argument in opts:
+        if option in ("-h", "--help"):
+            printHelp()
+        elif option in ("-v", "--version"):
+            printVer()
+        elif option in ("-p", "--pause"):
+            pauseOutput = 1
+        elif option in ("-m", "--show-missing"):
+            showMissing = 1
+        elif option in ("-l", "--colorize"):
+            colorOutput = 1
+        elif option in ('-r', '--make-rc'):
+            writeConfig(sys.argv)
+        elif option in ("-b", "--backup-ini-file"):
+            backupINI()
+        elif option in ("-c", "--cache-folder"):
+            cacheFolder = argument
+        elif option in ("-d", "--dest-folder"):
+            destFolder = argument
+        elif option in ("-x", "--extract"):
+            extract( argument )
+            #else:
+            #exit(0)
+
+    numArgs = len( sys.argv )
+    if numArgs == 1:
+        printHelp()
+
+
+    Search( sys.argv[-1])
+    pass
+
+if __name__ == "__main__":
+    main( sys.argv )
+
+# -----------------------------------------------------------------------------
+# Task List
+# -----------------------------------------------------------------------------
+# TODO: Get argparse working for cl arguments
+# FIXME: Improve help screen
+# TODO: Add toggle for summary information
+
+# -----------------------------------------------------------------------------
+# Version History
+# -----------------------------------------------------------------------------
+# 0.46  2014-11-30    +Totally re-wrote the writeconfig routine.
+#                     + because configparser sucks
+# 0.45  2014-11-30    +Now reads _and_ writes config file
+# 0.40  2014-11-29    +Now checks for, and reads config file, if present
+#                     +Added main() function & moved everything in there
+#                     +Declared variables are overridden by switches
+# 0.30  2014-11-28    +Extract now working
+# 0.20  2014-11-28    +Dates into list
+#                     +Files searchable by date
+# 0.17  2014-11-26    +Enabled toggle to show/hide missing entries
+#                     +Enabled toggleable colorization
+# 0.16  2014-11-25    +Implemented REGEX search. (Use a single dot for everything)
+# 0.15  2014-11-25    +Fixed pause function.
+#                     +Enabled command line options
+# 0.10  2014-11-24    +Disabled all moving or copying functions
+#                     +Added colorization to output (not yet toggleable)
+#                     +Added timestamp, changed behavior for missing files
+#                     +Cleaned up output to be more readable
+
+# vim: set ts=2 sw=2 tw=0 sts=2 et :
