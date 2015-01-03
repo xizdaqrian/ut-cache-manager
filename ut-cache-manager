@@ -16,6 +16,7 @@
 # Thank you Martin
 
 # Imports
+import datetime
 import getopt
 import os
 import re           # REGEX
@@ -173,7 +174,17 @@ def print_ver():
 
 def print_help():
     ''' Print a complete help screen '''
-    print ("%s " % str(sys.argv[0]) + "[-v] [-h] [-l] [-p] [-c] path/to/cache [-x] REGEX")
+    print ("USAGE:")
+    print ("%s" % str(sys.argv[0]) + bcolors.YELLOW + " [-h|--help] [-v|--version]")
+    print (bcolors.YELLOW + "[-p|--pause]" + bcolors.ENDC + " Pause output at each screenful")
+    print (bcolors.YELLOW + "[-m|--show-missing]" +  bcolors.ENDC + "   Show entries which have no corresponding file")
+    print (bcolors.YELLOW + "[-l|--colorize]" +  bcolors.ENDC + "   Colorize output")
+    print (bcolors.YELLOW + "[-r|--make-rc] path/to/rc " +  bcolors.ENDC + "   Create an rc file")
+    print (bcolors.YELLOW + "[-f|--cache-file]" +  bcolors.ENDC + "     Default is cache.ini")
+    print (bcolors.YELLOW + "[-c|--cache-folder] path/to/cache")   
+    print (bcolors.YELLOW + "[-x|--extract] path/to/extract")
+    print (bcolors.YELLOW + "[REGEX]" +  bcolors.ENDC + " Regular expression search term (Can be either date or name)")
+    print ("\nIf REGEX is the only argument given, search is implied.")
     sys.exit(0)
 
 
@@ -182,14 +193,14 @@ def exists_ini_file():
     try:
         cache_folder
     except NameError:
-        print ('==>ERROR: The Cache _folder has not been specified')
+        print ('==>ERROR: The Cache folder has not been specified')
         print_help()
         sys.exit(1)
 
     try:
         ini_file
     except NameError:
-        print ('==>ERROR: The INI _filename has not been specified')
+        print ('==>ERROR: The INI filename has not been specified')
         print_help()
         sys.exit(1)
 
@@ -280,15 +291,26 @@ def extract(regex):
     missing = []
     exists_ini_file()
     move = read_file(os.path.join(cache_folder, ini_file), regex)
+    today_folder = datetime.datetime.now().strftime("%Y-%m-%d")
+    final_dest = os.path.join(dest_folder, today_folder)
+
 
     if not dest_folder:
         print('==>ERROR:  Please specify a destination folder')
         print_help()
 
     if not os.path.exists(dest_folder):
-        print("_folder %s not found. Creating %s now..." % (dest_folder, dest_folder))
+        print("Folder %s not found. Creating %s now..." % (dest_folder, dest_folder))
         try:
             os.makedirs(dest_folder)
+        except os.error as err:
+            print(err)
+            exit(1)
+
+    if not os.path.exists(final_dest):
+        print("Creating %s now..." % (today_folder))
+        try:
+            os.makedirs(final_dest)
         except os.error as err:
             print(err)
             exit(1)
@@ -299,18 +321,22 @@ def extract(regex):
             continue
 
         src = '%s/%s' % (cache_folder, file_spec[1])
-        dst = '%s/%s' % (dest_folder, file_spec[2])
+        dst = '%s/%s/%s' % (dest_folder, today_folder, file_spec[2])
 
         try:
             shutil.copy2(src, dst)
-            print('extracting ' + bcolors.bBLACK + '%s' % file_spec[1] + bcolors.ENDC + ' ==> ' + bcolors.GREEN + '%s' % dst + bcolors.ENDC)
+            print('extracting ' + bcolors.bBLACK + '%s' % file_spec[1] + \
+                  bcolors.ENDC + ' ==> ' + bcolors.GREEN + '%s' % dst + \
+                  bcolors.ENDC)
         except shutil.Error as err:
             print(err)
             exit(1)
 
+#   FIXME: move these into a print_summary() function
     print ("Entries decoded:\t" + bcolors.CYAN + "%4i" % len(move) + bcolors.ENDC)
-    print ("_missing files\t\t" + bcolors.bRED + "%4i" % len(missing) + bcolors.ENDC)
-    print ("Extracted _files:\t" + bcolors.GREEN + "%4i" % (len(move) - len(missing)) + bcolors.ENDC)
+    print ("missing files\t\t" + bcolors.bRED + "%4i" % len(missing) + bcolors.ENDC)
+    print ("Extracted files:\t" + bcolors.GREEN + "%4i" % (len(move) - \
+                                                    len(missing)) + bcolors.ENDC)
     exit(0)
 
 
@@ -321,6 +347,7 @@ def main(argv):
     global cache_folder
     global color_output
     global dest_folder
+    global do_extract
     global game_folder
     global ini_file
     global osPlatform
@@ -332,11 +359,13 @@ def main(argv):
     user_home = os.path.expanduser('~')
     this_name = os.path.basename(sys.argv[0])
 #   os_platform = sys.platform
+    print (datetime.datetime.now().strftime("%Y-%m-%d"))
 
     if read_config() != 0:
         print('No config file found... using defaults and options')
         cache_extension = 'uxx'
         color_output = 0
+        do_extract = 0
         ini_file = 'cache.ini'
         pause_output = 0
         show_missing = 0
@@ -350,10 +379,10 @@ def main(argv):
     try:
         # Short option syntax: "hv:"
         # Long option syntax: "help" or "verbose="
-        opts, args = getopt.getopt(sys.argv[1:], "hvpmlrb:d:f:c:d:x:",
+        opts, args = getopt.getopt(sys.argv[1:], "hvpmlr:f:c:x:",
                                    ['help', 'version', 'pause', 'show-missing',
                                     'colorize', 'make-rc', 'cache-file',
-                                    'cache-folder', 'dest-folder', 'extract'])
+                                    'cache-folder', 'extract'])
 
     except getopt.GetoptError as err:
         # Print debug info
@@ -374,10 +403,9 @@ def main(argv):
             write_config(sys.argv)
         elif option in ("-c", "--cache-folder"):
             cache_folder = argument
-        elif option in ("-d", "--dest-folder"):
-            dest_folder = argument
         elif option in ("-x", "--extract"):
-            extract(argument)
+            dest_folder = argument
+            do_extract = 1
         # else:
             # exit(0)
 
@@ -385,7 +413,11 @@ def main(argv):
     if num_args == 1:
         print_help()
 
-    search(sys.argv[-1])
+    if do_extract == 1:
+        extract(sys.argv[-1])
+    else:
+        search(sys.argv[-1])
+
     pass
 
 if __name__ == "__main__":
@@ -395,12 +427,18 @@ if __name__ == "__main__":
 # Task List
 # -----------------------------------------------------------------------------
 # TODO: Get argparse working for cl arguments
-# FIXME: Improve help screen
 # TODO: Add toggle for summary information
+# TODO: Add toggle to extract files into subdirs by type
 
 # -----------------------------------------------------------------------------
 # Version History
 # -----------------------------------------------------------------------------
+# 0.50  2015-01-03    +Extract now puts files in dated subfolders, under the
+#                      destination folder
+# 0.49  2015-01-03    +Consolidated some options, to reduce code & add clarity
+#                     +Greatly improved print_help()
+#                     +Fixed modeline problem that was making vim go nuts
+# 0.48  2014-12-25    +Got extract function working. Simple indent problem.
 # 0.47  2014-12-14    +Corrected all style issues to be compliant w/PEP-8
 # 0.46  2014-11-30    +Totally re-wrote the writeconfig routine.
 #                     + because configparser sucks
@@ -421,4 +459,3 @@ if __name__ == "__main__":
 #                     +Added timestamp, changed behavior for missing files
 #                     +Cleaned up output to be more readable
 
-# vim: set ts=4 sw=4 tw=4 sts=4 et :
