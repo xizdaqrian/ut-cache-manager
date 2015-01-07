@@ -27,39 +27,39 @@ import time
 
 # http://stackoverflow.com/questions/287871/print-in-terminal-with-colors-using-python
 # http://stackoverflow.com/questions/4842424/list-of-ansi-color-escape-sequences
-class bcolors:
-    ''' A set of colors for printing '''
+#class bcolors:
+    #''' A set of colors for printing '''
 
-    # Foreground Standard
-    RED = '\033[31m'
-    BLUE = '\033[34m'
-    CYAN = '\033[36m'
-    ENDC = '\033[0m'
-    WHITE = '\033[37m'
-    GREEN = '\033[32m'
-    BLACK = '\033[30m'
-    YELLOW = '\033[33m'
-    MAGENTA = '\033[35m'
+## Foreground Standard
+#red = '\033[31m'
+#blue = '\033[34m'
+#cyan = '\033[36m'
+#reset = '\033[0m'
+#white = '\033[37m'
+#green = '\033[32m'
+#black = '\033[30m'
+#yellow = '\033[33m'
+#magenta = '\033[35m'
 
-    # Foreground Bold
-    bRED = '\033[31;1m'
-    bBLUE = '\033[34;1m'
-    bCYAN = '\033[36;1m'
-    bWHITE = '\033[37;1m'
-    bGREEN = '\033[32;1m'
-    bBLACK = '\033[30;1m'
-    bYELLOW = '\033[33;1m'
-    bMAGENTA = '\033[35;1m'
+## Foreground Bold
+#b_red = '\033[31;1m'
+#b_blue = '\033[34;1m'
+#b_cyan = '\033[36;1m'
+#b_white = '\033[37;1m'
+#b_green = '\033[32;1m'
+#b_black = '\033[30;1m'
+#b_yellow = '\033[33;1m'
+#b_magenta = '\033[35;1m'
 
-    # Background Standard
-    RED_BACK = '\033[41m'
-    BLUE_BACK = '\033[44m'
-    CYAN_BACK = '\033[46m'
-    WHITE_BACK = '\033[47m'
-    GREEN_BACK = '\033[42m'
-    BLACK_BACK = '\033[40m'
-    YELLOW_BACK = '\033[43m'
-    MAGENTA_BACK = '\033[45m'
+## Background Standard
+#red_back = '\033[41m'
+#blue_back = '\033[44m'
+#cyan_back = '\033[46m'
+#white_back = '\033[47m'
+#green_back = '\033[42m'
+#black_back = '\033[40m'
+#yellow_back = '\033[43m'
+#magenta_back = '\033[45m'
 
 
 def read_config():
@@ -102,7 +102,8 @@ def write_config(argv):
              'cache_folder': 'Games/Epic/UT2004/Cache/'}
     Files = {'ini_file': 'cache.ini',
              'cache_extension': 'uxx'}
-    Options = {'color_output': '0',
+    Options = {'do_color': '0',
+               'do_summary': '0',
                'pause_output': '0',
                'show_missing': '0'}
     try:
@@ -176,15 +177,19 @@ def print_ver():
 def print_help():
     ''' Print a complete help screen '''
     print ("USAGE:")
-    print ("{}{}[-h|--help] [-v|--version]".format(str(sys.argv[0]), bcolors.YELLOW))
-    print ("{}[-p|--pause]  {}Pause output at each screenful".format(bcolors.YELLOW, bcolors.ENDC))
-    print ("{}[-m|--show-missing]  {}Show entries which have no corresponding file".format(bcolors.YELLOW, bcolors.ENDC))
-    print ("{}[-l|--colorize]  {}Colorize output".format(bcolors.YELLOW, bcolors.ENDC))
-    print ("{}[-r|--make-rc]   {}Create an rc file".format(bcolors.YELLOW  , bcolors.ENDC ))
-    print ("{}[-f|--cache-file]   {}Default is cache.ini".format(bcolors.YELLOW  , bcolors.ENDC ))
-    print ("{}[-c|--cache-folder] {}path/to/cache".format(bcolors.YELLOW  , bcolors.ENDC ))   
-    print ("{}[-x|--extract] {}path/to/extract".format(bcolors.YELLOW  , bcolors.ENDC ))
-    print ("{}[REGEX] {}Regular expression search term (Can be either date or name)".format(bcolors.YELLOW  , bcolors.ENDC))
+    print ("{}{}[-h|--help] [-v|--version]".format(str(sys.argv[0]), yellow))
+    print ("{}[-p|--pause]  {}Pause output at each screenful".format(yellow, reset))
+    print ("{}[-m|--show-missing]  {}Show entries which have no corresponding \
+           file".format(yellow, reset))
+    print ("{}[-l|--colorize]  {}Colorize output".format(yellow, reset))
+    print ("{}[-r|--make-rc]   {}Create an rc file".format(yellow  , reset))
+    print ('{}[-e|--separate]  {}Extract mirrors game\'s folder structure'.\
+           format(yellow, reset))
+    print ("{}[-f|--cache-file]   {}Default is cache.ini".format(yellow  , reset))
+    print ("{}[-c|--cache-folder] {}path/to/cache".format(yellow  , reset))   
+    print ("{}[-x|--extract] {}path/to/extract".format(yellow  , reset))
+    print ("{}[REGEX] {}Regular expression search term (Can be either date or \
+           name)".format(yellow  , reset))
     print ("\nIf REGEX is the only argument given, search is implied.")
     sys.exit(0)
 
@@ -262,16 +267,16 @@ def search(regex):
         true_file = file[2]
         if file[0] != 'Not  Found':
             # http://www.seanelavelle.com/2012/05/04/make-os-stat-times-readable-in-python/
-            if color_output == 1:
-                print ('{}{}    {}{}    {}{}'.format(bcolors.GREEN, uxx_ctime, \
-                            bcolors.bBLACK, uxx_file, bcolors.ENDC, true_file))
+            if do_color == 1:
+                print ('{}{}    {}{}    {}{}'.format(green, uxx_ctime, \
+                            b_black, uxx_file, reset, true_file))
             else:
                 print ("{}    {}    {}".format(uxx_ctime, uxx_file, true_file))
         else:
-            if color_output == 1 and show_missing == 1:
-                print ('{}{}    {}{}    {}{}'.format(bcolors.bRED, uxx_ctime, \
-                            bcolors.bBLACK, uxx_file, bcolors.ENDC, true_file))
-            elif color_output != 1 and show_missing == 1:
+            if do_color == 1 and show_missing == 1:
+                print ('{}{}    {}{}    {}{}'.format(b_red, uxx_ctime, \
+                            b_black, uxx_file, reset, true_file))
+            elif do_color != 1 and show_missing == 1:
                 print ("{}    {}    {}".format(uxx_ctime, uxx_file, true_file))
             missing.append(file)
 
@@ -281,11 +286,12 @@ def search(regex):
             os.system("read -n 1 -p \"Press any key to continue\n\" ")
             counter = 0
 
-    print ("Entries decoded:\t{0}{1:4d}{2}".format(bcolors.CYAN, len(move), bcolors.ENDC))
-    print ("Missing files\t\t{0}{1:4d}{2}".format(bcolors.bRED, len(missing), bcolors.ENDC))
-    print ("Extractable files:\t{0}{1:4d}{2}".format(bcolors.GREEN, (len(move) - len(missing)), bcolors.ENDC))
-    if show_missing != 1:
-        print ("Show missing results with the \'-m\' option")
+    if do_summary:
+        print ("Entries decoded:\t{0}{1:4d}{2}".format(cyan, len(move), reset))
+        print ("Missing files\t\t{0}{1:4d}{2}".format(b_red, len(missing), reset))
+        print ("Extractable files:\t{0}{1:4d}{2}".format(green, (len(move) - len(missing)), reset))
+        if show_missing != 1:
+            print ("Show missing results with the \'-m\' option")
 
     exit(0)
 
@@ -295,52 +301,61 @@ def extract(regex):
     missing = []
     exists_ini_file()
     move = read_file(os.path.join(cache_folder, ini_file), regex)
+    game_tag = this_name.split('-', 1)[0]
     today_folder = datetime.datetime.now().strftime("%Y-%m-%d")
-    final_dest = os.path.join(dest_folder, today_folder)
+    final_dest = os.path.join(dest_folder, game_tag, today_folder)
+    sep_list = {'unr': 'Maps', 'ut2': 'Maps', 'ut3': 'Maps',
+                   'u': 'System', 'ucl': 'System', 'upl': 'System',
+                   'utx': 'Textures', 'umx': 'Music',
+                   'ukx': 'KarmaData', 'uax': 'Sounds',
+                   'usx': 'StaticMeshes', 'upk': 'EverythingElse'} 
 
 
     if not dest_folder:
-        print('==>ERROR:  Please specify a destination folder')
+        print('==>{}ERROR{}:  Please specify a destination folder'.format(\
+               red, reset))
         print_help()
 
-    if not os.path.exists(dest_folder):
-        print("Folder %s not found. Creating %s now..." % (dest_folder, dest_folder))
-        try:
-            os.makedirs(dest_folder)
-        except os.error as err:
-            print(err)
-            exit(1)
+    try:
+        os.makedirs(final_dest, exist_ok=True)
+    except os.error as err:
+        print(err)
+        exit(1)
 
-    if not os.path.exists(final_dest):
-        print("Creating %s now..." % (today_folder))
-        try:
-            os.makedirs(final_dest)
-        except os.error as err:
-            print(err)
-            exit(1)
-
-    for file_spec in move:
-        if file_spec[0] == 'Not  Found':
-            missing.append(file_spec)
+    for package in move:
+        if package[0] == 'Not  Found':
+            missing.append(package)
             continue
 
-        src = '%s/%s' % (cache_folder, file_spec[1])
-        dst = '%s/%s/%s' % (dest_folder, today_folder, file_spec[2])
+        src = '%s/%s' % (cache_folder, package[1])
+        ext = package[2].split('.')[1]
+
+
+        if do_separate:
+            if ext in sep_list:
+                sep_dir = sep_list[ext]
+            else:
+                sep_dir = 'unk'
+
+            os.makedirs(os.path.join(final_dest, sep_dir), exist_ok=True)
+            dst = '%s/%s/%s' % (final_dest, sep_dir, package[2])
+        else:
+            dst = '%s/%s' % (final_dest, package[2])
+
 
         try:
             shutil.copy2(src, dst)
-            print('extracting ' + bcolors.bBLACK + '%s' % file_spec[1] + \
-                  bcolors.ENDC + ' ==> ' + bcolors.GREEN + '%s' % dst + \
-                  bcolors.ENDC)
+            print('extracting {}{} {}==> {}{}{}'.format(b_black, package[1],\
+                                                 reset, green, dst, reset))
         except shutil.Error as err:
             print(err)
             exit(1)
 
-#   FIXME: move these into a print_summary() function
-    print ("Entries decoded:\t{0}{1:4d}{2}".format(bcolors.CYAN, len(move), bcolors.ENDC))
-    print ("missing files\t\t{0}{1:4d}{2}".format(bcolors.bRED, len(missing), bcolors.ENDC))
-    print ("Extracted files:\t{0}{1:4d}{2}".format(bcolors.GREEN, (len(move) - \
-                                                    len(missing)) + bcolors.ENDC))
+    if do_summary:
+        print ("Entries decoded:\t{0}{1:4d}{2}".format(cyan, len(move), reset))
+        print ("missing files\t\t{0}{1:4d}{2}".format(b_red, len(missing), reset))
+        print ("Extracted files:\t{0}{1:4d}{2}".format(green, (len(move) - \
+                                                        len(missing)), reset))
     exit(0)
 
 
@@ -349,9 +364,11 @@ def main(argv):
     # Globals
     global cache_extension
     global cache_folder
-    global color_output
     global dest_folder
+    global do_color
     global do_extract
+    global do_separate
+    global do_summary
     global game_folder
     global ini_file
     global osPlatform
@@ -359,6 +376,62 @@ def main(argv):
     global show_missing
     global this_name
     global user_home
+    global red
+    global blue
+    global cyan
+    global reset
+    global white
+    global green
+    global black
+    global yellow
+    global magenta
+    global b_red
+    global b_blue
+    global b_cyan
+    global b_white
+    global b_green
+    global b_black
+    global b_yellow
+    global b_magenta
+    global red_back
+    global blue_back
+    global cyan_back
+    global white_back
+    global green_back
+    global black_back
+    global yellow_back
+    global magenta_back
+
+# Foreground Standard
+    red = '\033[31m'
+    blue = '\033[34m'
+    cyan = '\033[36m'
+    reset = '\033[0m'
+    white = '\033[37m'
+    green = '\033[32m'
+    black = '\033[30m'
+    yellow = '\033[33m'
+    magenta = '\033[35m'
+
+# Foreground Bold
+    b_red = '\033[31;1m'
+    b_blue = '\033[34;1m'
+    b_cyan = '\033[36;1m'
+    b_white = '\033[37;1m'
+    b_green = '\033[32;1m'
+    b_black = '\033[30;1m'
+    b_yellow = '\033[33;1m'
+    b_magenta = '\033[35;1m'
+
+# Background Standard
+    red_back = '\033[41m'
+    blue_back = '\033[44m'
+    cyan_back = '\033[46m'
+    white_back = '\033[47m'
+    green_back = '\033[42m'
+    black_back = '\033[40m'
+    yellow_back = '\033[43m'
+    magenta_back = '\033[45m'
 
     user_home = os.path.expanduser('~')
     this_name = os.path.basename(sys.argv[0])
@@ -368,10 +441,12 @@ def main(argv):
     if read_config() != 0:
         print('No config file found... using defaults and options')
         cache_extension = 'uxx'
-        color_output = 0
-        ini_file = 'cache.ini'
-        pause_output = 0
-        show_missing = 0
+        do_color        = 1
+        do_separate     = 0
+        do_summary      = 1
+        ini_file        = 'cache.ini'
+        pause_output    = 0
+        show_missing    = 0
         # listofArgs = str(sys.argv)
         # if sys.platform[:3] == 'win':
         #   cache_folder = '%s\\UnrealTournament\\Cache\\' % os.getenv('SYSTEMDRIVE')
@@ -382,33 +457,42 @@ def main(argv):
     try:
         # Short option syntax: "hv:"
         # Long option syntax: "help" or "verbose="
-        opts, args = getopt.getopt(sys.argv[1:], "hvpmlrf:c:x:",
-                                   ['help', 'version', 'pause', 'show-missing',
-                                    'colorize', 'make-rc', 'cache-file',
-                                    'cache-folder', 'extract'])
+        opts, args = getopt.getopt(sys.argv[1:], 'hvspmlref:c:x:',
+                       ['help', 'version', 'no-summary', 'pause', 'show-missing',
+                        'no-color', 'make-rc', 'separate',  'cache-file',
+                        'cache-folder', 'extract'])
 
     except getopt.GetoptError as err:
         # Print debug info
         print (err)
 
     for option, argument in opts:
-        if option in ("-h", "--help"):
+        if option in ('-h', '--help'):
             print_help()
-        elif option in ("-v", "--version"):
+        elif option in ('-v', '--version'):
             print_ver()
-        elif option in ("-p", "--pause"):
+        elif option in ('-s', '--no-summary'):
+            do_summary = 0
+        elif option in ('-p', '--pause'):
             pause_output = 1
-        elif option in ("-m", "--show-missing"):
+        elif option in ('-m', '--show-missing'):
             show_missing = 1
-        elif option in ("-l", "--colorize"):
-            color_output = 1
+        elif option in ('-l', '--no-color'):
+            do_color = 0
         elif option in ('-r', '--make-rc'):
             write_config(sys.argv)
-        elif option in ("-c", "--cache-folder"):
+        elif option in ('-e', '--separate'):
+            do_separate = 1
+        elif option in ('-c', '--cache-folder'):
             cache_folder = argument
-        elif option in ("-x", "--extract"):
-            dest_folder = argument
-            do_extract = 1
+        elif option in ('-x', '--extract'):
+            if argument.startswith(('/','./', '~/')):
+                dest_folder = argument
+                do_extract = 1
+            else:
+                print ('{}ERROR{}: Extract path must start with / ~/ or ./'.\
+                       format(red, reset))
+                exit(1)
         # else:
             # exit(0)
 
@@ -416,7 +500,7 @@ def main(argv):
     if num_args == 1:
         print_help()
 
-    if do_extract == 1:
+    if do_extract:
         extract(sys.argv[-1])
     else:
         search(sys.argv[-1])
@@ -430,14 +514,18 @@ if __name__ == "__main__":
 # Task List
 # -----------------------------------------------------------------------------
 # TODO  : Get argparse working for cl arguments
-# TODO  : Add toggle for summary information
-# TODO  : Add toggle to extract files into subdirs by type
-# FIXME : Make extract() put files into a game specific subfolder, then
-#        into dated subfolders.
 
 # -----------------------------------------------------------------------------
 # Version History
 # -----------------------------------------------------------------------------
+# 0.61  2015-01-06    +Path checking for extract
+# 0.60  2015-01-06    +Toggle for separating files into subfolders by type
+# 0.53  2015-01-06    +Added toggle for summary info
+#                     +refactored a couple of variables for clarity
+#                     +reflected changes in write_config()
+# 0.52  2015-01-06    +extract() now puts files into a game specific subfolder,
+#                      then into dated subfolders
+#                     +reduced logic needed in extract
 # 0.51  2015-01-05    +Updated print statements to Python3 style.
 #                     +Now working with UT3
 #                     +Updated write_config() to work with paths containing
