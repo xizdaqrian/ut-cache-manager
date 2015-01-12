@@ -27,39 +27,6 @@ import time
 
 # http://stackoverflow.com/questions/287871/print-in-terminal-with-colors-using-python
 # http://stackoverflow.com/questions/4842424/list-of-ansi-color-escape-sequences
-#class bcolors:
-    #''' A set of colors for printing '''
-
-## Foreground Standard
-#red = '\033[31m'
-#blue = '\033[34m'
-#cyan = '\033[36m'
-#reset = '\033[0m'
-#white = '\033[37m'
-#green = '\033[32m'
-#black = '\033[30m'
-#yellow = '\033[33m'
-#magenta = '\033[35m'
-
-## Foreground Bold
-#b_red = '\033[31;1m'
-#b_blue = '\033[34;1m'
-#b_cyan = '\033[36;1m'
-#b_white = '\033[37;1m'
-#b_green = '\033[32;1m'
-#b_black = '\033[30;1m'
-#b_yellow = '\033[33;1m'
-#b_magenta = '\033[35;1m'
-
-## Background Standard
-#red_back = '\033[41m'
-#blue_back = '\033[44m'
-#cyan_back = '\033[46m'
-#white_back = '\033[47m'
-#green_back = '\033[42m'
-#black_back = '\033[40m'
-#yellow_back = '\033[43m'
-#magenta_back = '\033[45m'
 
 
 def read_config():
@@ -170,17 +137,17 @@ def get_terminal_size():
 
 def print_ver():
     ''' Print the current file version of this script '''
-    print ('{} - v0.51'.format(this_name))
+    print ('{} - v0.62'.format(this_name))
     sys.exit(0)
 
 
 def print_help():
     ''' Print a complete help screen '''
     print ("USAGE:")
-    print ("{}{}[-h|--help] [-v|--version]".format(str(sys.argv[0]), yellow))
+    print ("{}{}[-h|--help] [-v|--version]".format(this_name, yellow))
     print ("{}[-p|--pause]  {}Pause output at each screenful".format(yellow, reset))
-    print ("{}[-m|--show-missing]  {}Show entries which have no corresponding \
-           file".format(yellow, reset))
+    print ("{}[-m|--show-missing]  {}Show entries which have no corresponding file".\
+           format(yellow, reset))
     print ("{}[-l|--colorize]  {}Colorize output".format(yellow, reset))
     print ("{}[-r|--make-rc]   {}Create an rc file".format(yellow  , reset))
     print ('{}[-e|--separate]  {}Extract mirrors game\'s folder structure'.\
@@ -188,8 +155,8 @@ def print_help():
     print ("{}[-f|--cache-file]   {}Default is cache.ini".format(yellow  , reset))
     print ("{}[-c|--cache-folder] {}path/to/cache".format(yellow  , reset))   
     print ("{}[-x|--extract] {}path/to/extract".format(yellow  , reset))
-    print ("{}[REGEX] {}Regular expression search term (Can be either date or \
-           name)".format(yellow  , reset))
+    print ("{}[REGEX] {}Regular expression search term (Can be either date or name)".\
+           format(yellow  , reset))
     print ("\nIf REGEX is the only argument given, search is implied.")
     sys.exit(0)
 
@@ -214,7 +181,8 @@ def exists_ini_file():
     print ('Ini file path: {}'.format(ini))
     if not os.path.exists(ini):
         print ('Error: file {} does not exist.'.format(ini_file))
-        print ('Example: %s -c C:\\games\\UnrealTournament\\Cache\\ -f cache.ini' % sys.argv[0])
+        print ('Example: {} -c C:\\games\\UnrealTournament\\Cache\\ -f cache.ini'\
+               .format(this_name))
         sys.exit(1)
 
 
@@ -518,6 +486,9 @@ if __name__ == "__main__":
 # -----------------------------------------------------------------------------
 # Version History
 # -----------------------------------------------------------------------------
+# 0.62  2015-01-12    +Corrected a couple of missed print statements
+#                     +Substituted global variable for longer statements in a
+#                      couple of places. Makes more maintainable & readable
 # 0.61  2015-01-06    +Path checking for extract
 # 0.60  2015-01-06    +Toggle for separating files into subfolders by type
 # 0.53  2015-01-06    +Added toggle for summary info
