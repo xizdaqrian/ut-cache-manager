@@ -16,7 +16,7 @@ All Unreal series games have the following properties in common:
 
 ###What does ut-cache-manager do?
 
-ut-cache-manager parses the cache decoding file, whose default name is 'cache.ini.'
+>ut-cache-manager parses the cache decoding file, whose default name is 'cache.ini.'
 It then checks for the presence of each of the files on disk. Sometimes Unreal
 series games delete the files, or even clears the cache decoding file.
 ut-cache-manager accounts for all this, and gives you the complete scoop on your
